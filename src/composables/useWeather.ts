@@ -1,6 +1,7 @@
 import { useLocalStorage } from '@vueuse/core';
 import axios from 'axios';
 import { ref } from 'vue';
+import { getWeatherEmoji } from '../utils/weatherEmoji';
 
 // Composable que gestiona la obtención del clima basado en el código postal
 export function useWeather() {
@@ -51,25 +52,6 @@ export function useWeather() {
     } finally {
       loading.value = false;
     }
-  };
-
-  const getWeatherEmoji = (weatherDescription: string) => {
-    if (weatherDescription.includes('soleado')) {
-      return '☀️';
-    } else if (weatherDescription.includes('nublado')) {
-      return '☁️';
-    } else if (weatherDescription.includes('lluvia')) {
-      return '🌧️';
-    } else if (weatherDescription.includes('tormenta')) {
-      return '⛈️';
-    } else if (weatherDescription.includes('nieve')) {
-      return '❄️';
-    } else if (weatherDescription.includes('bruma') || weatherDescription.includes('niebla')) {
-      return '🌫️';
-    } else if (weatherDescription.includes('calor')) {
-      return '🔥';
-    }
-    return '🌡️';
   };
 
   return {
