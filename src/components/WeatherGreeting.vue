@@ -50,7 +50,6 @@ import { useWeather } from '../composables/useWeather';
 
 const { postalCode, greetingMessage, infoMessage, fetchWeather, loading, error } = useWeather();
 
-// Función para copiar al portapapeles
 const copyToClipboard = () => {
   navigator.clipboard.writeText(greetingMessage.value);
   alert('Saludo copiado al portapapeles');

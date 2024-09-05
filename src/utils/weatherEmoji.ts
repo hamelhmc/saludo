@@ -5,6 +5,7 @@ const weatherEmojiMap: { [key: string]: string } = {
   'poco nuboso noche': '🌖',
   'intervalos nubosos': '🌥️',
   'intervalos nubosos noche': '🌥️',
+  'nuboso': '☁️',
   'muy nuboso': '☁️',
   cubierto: '☁️',
   'nubes altas': '🌤️',

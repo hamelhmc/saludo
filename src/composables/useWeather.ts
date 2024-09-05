@@ -1,65 +1,80 @@
 import { useLocalStorage } from '@vueuse/core';
 import axios from 'axios';
-import { ref } from 'vue';
+import { onMounted, reactive, toRefs } from 'vue';
+import type { InitialApiResponse, WeatherData } from '../model/WeatherData';
 import { getWeatherEmoji } from '../utils/weatherEmoji';
 
-// Composable que gestiona la obtención del clima basado en el código postal
 export function useWeather() {
-  const postalCode = useLocalStorage('postalCode', ''); // Guardamos el código postal en el localStorage
-  const greetingMessage = ref('');
-  const infoMessage = ref('');
-  const loading = ref(false);
-  const error = ref('');
+  const postalCode = useLocalStorage<string>('postalCode', ''); // LocalStorage con tipado de string
+  const weatherData = reactive({
+    greetingMessage: '',
+    infoMessage: '',
+    loading: false,
+    error: ''
+  });
 
-  const fetchWeather = async () => {
+  const isValidPostalCode = (code: string): boolean => {
+    const postalCodeRegex = /^[0-9]{5}$/;
+    return postalCodeRegex.test(code);
+  };
+
+  const fetchWeather = async (): Promise<void> => {
     try {
-      if (!postalCode.value) {
-        error.value = 'Por favor, introduce un código postal';
+      if (!postalCode.value || !isValidPostalCode(postalCode.value)) {
+        weatherData.error = 'Por favor, introduce un código postal válido de 5 dígitos';
         return;
       }
 
-      loading.value = true;
-      error.value = '';
+      weatherData.loading = true;
+      weatherData.error = '';
 
-      const apiKey = import.meta.env.VITE_AEMET_API_KEY;
+      const apiKey = import.meta.env.VITE_AEMET_API_KEY as string;
       const url = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/${postalCode.value}?api_key=${apiKey}`;
 
-      const initialResponse = await axios.get(url);
+      const initialResponse = await axios.get<InitialApiResponse>(url);
       if (initialResponse.data.estado === 200) {
         const weatherUrl = initialResponse.data.datos;
+        const weatherResponse = await axios.get<WeatherData[]>(weatherUrl);
+        const weatherDataFetched = weatherResponse.data[0];
+        console.log('🐛 ➜ fetchWeather ➜ weatherData➜', weatherDataFetched);
 
-        const weatherResponse = await axios.get(weatherUrl);
-        const weatherData = weatherResponse.data[0];
+        if (weatherDataFetched?.prediccion?.dia?.length > 0) {
+          const city = weatherDataFetched.nombre;
+          const provincia = weatherDataFetched.provincia;
+          const estadoCielo = weatherDataFetched.prediccion.dia[0].estadoCielo.filter(estado => estado.descripcion).map(estado => estado.descripcion)[0] || 'N/A';
+          const temperaturaMaxima = weatherDataFetched.prediccion.dia[0].temperatura?.maxima || 'N/A';
+          const temperaturaMinima = weatherDataFetched.prediccion.dia[0].temperatura?.minima || 'N/A';
+          const emoji = getWeatherEmoji(estadoCielo);
 
-        const city = weatherData.nombre;
-        const provincia = weatherData.provincia;
-        const estadoCielo = weatherData.prediccion.dia[0].estadoCielo[2].descripcion;
-        const temperaturaMaxima = weatherData.prediccion.dia[0].temperatura.maxima;
-        const temperaturaMinima = weatherData.prediccion.dia[0].temperatura.minima;
-        const emoji = getWeatherEmoji(estadoCielo);
-
-        // Mensaje de saludo con el emoji para copiar
-        greetingMessage.value = `Buenos días ${emoji}`;
-
-        // Mensaje informativo adicional
-        infoMessage.value = `En ${city}, ${provincia}, el estado del cielo es ${estadoCielo}. Temperatura máxima: ${temperaturaMaxima}°C, mínima: ${temperaturaMinima}°C.`;
+          weatherData.greetingMessage = `Buenos días ${emoji}`;
+          weatherData.infoMessage = `En ${city}, ${provincia}, el estado del cielo es ${estadoCielo}. Temperatura máxima: ${temperaturaMaxima}°C, mínima: ${temperaturaMinima}°C.`;
+        } else {
+          weatherData.error = 'No se pudo obtener la información del clima: datos incompletos.';
+        }
       } else {
-        error.value = 'No se ha podido obtener la información del clima.';
+        weatherData.error = 'No se ha podido obtener la información del clima.';
       }
     } catch (err) {
-      console.error('Error al obtener los datos del clima:', err);
-      error.value = 'Error al obtener los datos del clima.';
+      if (axios.isAxiosError(err)) {
+        weatherData.error = `Error de red: ${err.message}`;
+      } else {
+        weatherData.error = 'Ocurrió un error inesperado.';
+      }
     } finally {
-      loading.value = false;
+      weatherData.loading = false;
     }
   };
 
+  onMounted((): void => {
+    if (postalCode.value && isValidPostalCode(postalCode.value)) {
+      fetchWeather();
+    }
+  });
+
   return {
     postalCode,
-    greetingMessage,
-    infoMessage,
+    weatherData,
     fetchWeather,
-    loading,
-    error,
+    ...toRefs(weatherData)
   };
 }
