@@ -1,13 +1,57 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Vue + TS</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
-  </body>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEO Title -->
+  <title>ClimaFlow - Consulta el clima en tiempo real</title>
+
+  <!-- Descripción para SEO -->
+  <meta name="description"
+    content="ClimaFlow es una moderna aplicación para consultar el clima, basada en Vite, Vue y TypeScript. Obtén información precisa sobre el clima en tu ciudad con un diseño minimalista y animaciones fluidas." />
+
+  <!-- Palabras clave -->
+  <meta name="keywords"
+    content="clima, tiempo, app del tiempo, ClimaFlow, Vue, Vite, TypeScript, aplicación del clima, predicción del clima" />
+
+  <!-- Favicon y otros íconos -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="/android-chrome-192x192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="/android-chrome-512x512.png">
+  <link rel="manifest" href="/site.webmanifest" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ClimaFlow - Consulta el clima en tiempo real" />
+  <meta property="og:description"
+    content="Consulta el clima en tu ciudad con ClimaFlow, una moderna aplicación con un diseño minimalista y animaciones fluidas." />
+  <meta property="og:image" content="/images/clima-preview.png" />
+  <meta property="og:url" content="https://hamelhmc.github.io/saludo/" />
+  <meta property="og:type" content="website" />
+
+  <!-- Twitter Cards -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="ClimaFlow - Consulta el clima en tiempo real" />
+  <meta name="twitter:description" content="ClimaFlow te ofrece información del clima precisa con un diseño moderno." />
+  <meta name="twitter:image" content="/images/clima-preview.png" />
+
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://hamelhmc.github.io/saludo/" />
+
+  <!-- Preload de recursos críticos -->
+  <link rel="preload" href="/src/main.ts" as="script" />
+  <link rel="preload" href="/dist/style.css" as="style" />
+
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+</head>
+
+<body>
+  <div id="app"></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>
