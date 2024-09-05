@@ -25,7 +25,7 @@
         <!-- Botón con estilo Material Design 3 -->
         <button @click="fetchWeather"
           class="w-full inline-flex justify-center items-center px-4 py-2 bg-primary text-on-primary rounded-full shadow-md font-semibold hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition disabled:bg-on-surface-disabled"
-          :disabled="loading" aria-busy="loading">
+          :disabled="loading">
           {{ loading ? 'Cargando...' : 'Obtener Clima' }}
         </button>
 
