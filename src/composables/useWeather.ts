@@ -30,7 +30,7 @@ export function useWeather() {
 
   const fetchLocationKey = async (code: string): Promise<{ key: string, city: string, region: string } | null> => {
     try {
-      const locationUrl = `http://dataservice.accuweather.com/locations/v1/postalcodes/search?apikey=${apiKey}&q=${code}&language=${language}`;
+      const locationUrl = `https://dataservice.accuweather.com/locations/v1/postalcodes/search?apikey=${apiKey}&q=${code}&language=${language}`;
       const locationResponse = await axios.get(locationUrl);
 
       if (locationResponse.data.length === 0) {
@@ -51,7 +51,7 @@ export function useWeather() {
 
   const fetchCurrentWeather = async (locationKey: string): Promise<any> => {
     try {
-      const weatherUrl = `http://dataservice.accuweather.com/currentconditions/v1/${locationKey}?apikey=${apiKey}&language=${language}&details=true`;
+      const weatherUrl = `https://dataservice.accuweather.com/currentconditions/v1/${locationKey}?apikey=${apiKey}&language=${language}&details=true`;
       const weatherResponse = await axios.get(weatherUrl);
 
       if (weatherResponse.data.length === 0) {
