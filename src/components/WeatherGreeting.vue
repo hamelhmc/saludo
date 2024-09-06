@@ -107,7 +107,6 @@ const {
 
 const copyToClipboard = () => {
   navigator.clipboard.writeText(greetingMessage.value);
-  alert('Saludo copiado al portapapeles');
 };
 </script>
 
