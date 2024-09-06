@@ -1,14 +1,24 @@
-import { useLocalStorage } from '@vueuse/core';
+import { useLocalStorage, useNetwork, useTimeoutFn } from '@vueuse/core';
 import axios from 'axios';
 import { onMounted, reactive, toRefs } from 'vue';
-import type { InitialApiResponse, WeatherData } from '../model/WeatherData';
-import { getWeatherEmoji } from '../utils/weatherEmoji';
+import { getWeatherEmoji, getWindDirection } from '../utils/weatherEmoji';
+
+const apiKey = import.meta.env.VITE_ACCUWEATHER_API_KEY as string;
+const language = 'es-ES';
 
 export function useWeather() {
   const postalCode = useLocalStorage<string>('postalCode', ''); // LocalStorage con tipado de string
+  const isOnline = useNetwork().isOnline; // Detectar si el usuario está conectado a la red
+
   const weatherData = reactive({
     greetingMessage: '',
     infoMessage: '',
+    temperature: '',
+    feelsLike: '',
+    humidity: '',
+    windSpeed: '',
+    windDirection: '',
+    uvIndex: '',
     loading: false,
     error: ''
   });
@@ -18,52 +28,99 @@ export function useWeather() {
     return postalCodeRegex.test(code);
   };
 
-  const fetchWeather = async (): Promise<void> => {
+  const fetchLocationKey = async (code: string): Promise<{ key: string, city: string, region: string } | null> => {
     try {
-      if (!postalCode.value || !isValidPostalCode(postalCode.value)) {
-        weatherData.error = 'Por favor, introduce un código postal válido de 5 dígitos';
-        return;
+      const locationUrl = `http://dataservice.accuweather.com/locations/v1/postalcodes/search?apikey=${apiKey}&q=${code}&language=${language}`;
+      const locationResponse = await axios.get(locationUrl);
+
+      if (locationResponse.data.length === 0) {
+        weatherData.error = 'No se encontró una ubicación válida para ese código postal.';
+        return null;
       }
 
-      weatherData.loading = true;
-      weatherData.error = '';
+      const locationKey = locationResponse.data[0].Key;
+      const city = locationResponse.data[0].LocalizedName;
+      const region = locationResponse.data[0].AdministrativeArea.LocalizedName;
 
-      const apiKey = import.meta.env.VITE_AEMET_API_KEY as string;
-      const url = `https://opendata.aemet.es/opendata/api/prediccion/especifica/municipio/diaria/${postalCode.value}?api_key=${apiKey}`;
-
-      const initialResponse = await axios.get<InitialApiResponse>(url);
-      if (initialResponse.data.estado === 200) {
-        const weatherUrl = initialResponse.data.datos;
-        const weatherResponse = await axios.get<WeatherData[]>(weatherUrl);
-        const weatherDataFetched = weatherResponse.data[0];
-        console.log('🐛 ➜ fetchWeather ➜ weatherData➜', weatherDataFetched);
-
-        if (weatherDataFetched?.prediccion?.dia?.length > 0) {
-          const city = weatherDataFetched.nombre;
-          const provincia = weatherDataFetched.provincia;
-          const estadoCielo = weatherDataFetched.prediccion.dia[0].estadoCielo.filter(estado => estado.descripcion).map(estado => estado.descripcion)[0] || 'N/A';
-          const temperaturaMaxima = weatherDataFetched.prediccion.dia[0].temperatura?.maxima || 'N/A';
-          const temperaturaMinima = weatherDataFetched.prediccion.dia[0].temperatura?.minima || 'N/A';
-          const emoji = getWeatherEmoji(estadoCielo);
-
-          weatherData.greetingMessage = `Buenos días ${emoji}`;
-          weatherData.infoMessage = `En ${city}, ${provincia}, el estado del cielo es ${estadoCielo}. Temperatura máxima: ${temperaturaMaxima}°C, mínima: ${temperaturaMinima}°C.`;
-        } else {
-          weatherData.error = 'No se pudo obtener la información del clima: datos incompletos.';
-        }
-      } else {
-        weatherData.error = 'No se ha podido obtener la información del clima.';
-      }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        weatherData.error = `Error de red: ${err.message}`;
-      } else {
-        weatherData.error = 'Ocurrió un error inesperado.';
-      }
-    } finally {
-      weatherData.loading = false;
+      return { key: locationKey, city, region };
+    } catch (error) {
+      weatherData.error = 'Error al obtener la clave de ubicación.';
+      return null;
     }
   };
+
+  const fetchCurrentWeather = async (locationKey: string): Promise<any> => {
+    try {
+      const weatherUrl = `http://dataservice.accuweather.com/currentconditions/v1/${locationKey}?apikey=${apiKey}&language=${language}&details=true`;
+      const weatherResponse = await axios.get(weatherUrl);
+
+      if (weatherResponse.data.length === 0) {
+        weatherData.error = 'No se pudo obtener la información del clima.';
+        return null;
+      }
+
+      return weatherResponse.data[0];
+    } catch (error) {
+      weatherData.error = 'Error al obtener la información del clima.';
+      return null;
+    }
+  };
+
+  const handleWeatherResponse = (currentWeather: any, city: string, region: string): void => {
+    const estadoCielo = currentWeather.WeatherText;
+    const temperatura = currentWeather.Temperature.Metric.Value;
+    const feelsLike = currentWeather.RealFeelTemperature.Metric.Value;
+    const humidity = currentWeather.RelativeHumidity;
+    const windSpeed = currentWeather.Wind.Speed.Metric.Value;
+    const uvIndex = currentWeather.UVIndex;
+    const emoji = getWeatherEmoji(estadoCielo);
+
+    weatherData.greetingMessage = `Buenos días ${emoji}`;
+    weatherData.infoMessage = `En ${city}, ${region}, el estado del cielo es ${estadoCielo}. Temperatura: ${temperatura}°C`;
+    weatherData.temperature = `Temperatura actual: ${temperatura}°C`;
+    weatherData.feelsLike = `Sensación térmica: ${feelsLike}°C`;
+    weatherData.humidity = `Humedad: ${humidity}%`;
+    weatherData.windSpeed = `Velocidad del viento: ${windSpeed} km/h`;
+    const windDirectionDegrees = currentWeather.Wind.Direction.Degrees;
+    const windDirectionCardinal = getWindDirection(windDirectionDegrees);
+    weatherData.windDirection = `Dirección del viento: ${windDirectionCardinal} ${windDirectionDegrees}°`;
+    weatherData.uvIndex = `Índice UV: ${uvIndex}`;
+  };
+
+  const fetchWeather = async (): Promise<void> => {
+    if (!postalCode.value || !isValidPostalCode(postalCode.value)) {
+      weatherData.error = 'Por favor, introduce un código postal válido de 5 dígitos';
+      return;
+    }
+
+    if (!isOnline.value) {
+      weatherData.error = 'Parece que estás desconectado de la red.';
+      return;
+    }
+
+    weatherData.loading = true;
+    weatherData.error = '';
+
+    const locationInfo = await fetchLocationKey(postalCode.value);
+    if (!locationInfo) {
+      weatherData.loading = false;
+      return;
+    }
+
+    const currentWeather = await fetchCurrentWeather(locationInfo.key);
+    if (currentWeather) {
+      handleWeatherResponse(currentWeather, locationInfo.city, locationInfo.region);
+    }
+
+    weatherData.loading = false;
+  };
+
+  useTimeoutFn(() => {
+    if (weatherData.loading) {
+      weatherData.loading = false;
+      weatherData.error = 'La solicitud de clima ha tardado demasiado.';
+    }
+  }, 10000);
 
   onMounted((): void => {
     if (postalCode.value && isValidPostalCode(postalCode.value)) {

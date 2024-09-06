@@ -14,6 +14,48 @@
           {{ infoMessage }}
         </p>
 
+        <!-- Información adicional del clima -->
+        <div v-if="temperature || feelsLike || humidity || windSpeed || windDirection || uvIndex" class="mb-4 w-full">
+          <!-- Usamos un grid para organizar la información de manera atractiva -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Temperatura -->
+            <div v-if="temperature" class="flex items-center">
+              <span class="text-xl mr-2">🌡️</span>
+              <p class="text-body-lg text-on-surface-variant">{{ temperature }}</p>
+            </div>
+
+            <!-- Sensación térmica -->
+            <div v-if="feelsLike" class="flex items-center">
+              <span class="text-xl mr-2">🔥</span>
+              <p class="text-body-lg text-on-surface-variant">{{ feelsLike }}</p>
+            </div>
+
+            <!-- Humedad -->
+            <div v-if="humidity" class="flex items-center">
+              <span class="text-xl mr-2">💧</span>
+              <p class="text-body-lg text-on-surface-variant">{{ humidity }}</p>
+            </div>
+
+            <!-- Velocidad del viento -->
+            <div v-if="windSpeed" class="flex items-center">
+              <span class="text-xl mr-2">💨</span>
+              <p class="text-body-lg text-on-surface-variant">{{ windSpeed }}</p>
+            </div>
+
+            <!-- Dirección del viento -->
+            <div v-if="windDirection" class="flex items-center">
+              <span class="text-xl mr-2">🧭</span>
+              <p class="text-body-lg text-on-surface-variant">{{ windDirection }}</p>
+            </div>
+
+            <!-- Índice UV -->
+            <div v-if="uvIndex" class="flex items-center">
+              <span class="text-xl mr-2">🌞</span>
+              <p class="text-body-lg text-on-surface-variant">{{ uvIndex }}</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Input del código postal con diseño M3 -->
         <div class="mb-4 w-full">
           <label for="postalCode" class="block text-label-lg font-medium text-on-surface">Código Postal</label>
@@ -48,7 +90,20 @@
 <script setup lang="ts">
 import { useWeather } from '../composables/useWeather';
 
-const { postalCode, greetingMessage, infoMessage, fetchWeather, loading, error } = useWeather();
+const {
+  postalCode,
+  greetingMessage,
+  infoMessage,
+  temperature,
+  feelsLike,
+  humidity,
+  windSpeed,
+  windDirection,
+  uvIndex,
+  fetchWeather,
+  loading,
+  error
+} = useWeather();
 
 const copyToClipboard = () => {
   navigator.clipboard.writeText(greetingMessage.value);
